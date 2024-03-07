@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TES API aprs.fi</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        /* Set ukuran peta */
+        #map { height: 400px; }
+    </style>
+</head>
+<body>
+    <h1>Ngetest API aprs.fi</h1>
+    <div id="info">
+        <p>Nama APRS Pengguna: <span id="username"></span></p>
+        <p>Posisi Terakhir: <span id="location"></span></p>
+        <p>Arah: <span id="course"></span>&deg;</p>
+        <p>Kecepatan: <span id="speed"></span> km/h</p>
+    </div>
+    <!-- Peta -->
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        const apiKey = '195540.BDMkqb8DEdZ7O'; // Ganti dengan API Key Anda
+        const map = L.map('map').setView([0, 0], 2); // Koordinat default
+
+        // Tambahkan tile layer OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Fungsi untuk memuat data lokasi dari API APRS.fi
+        function loadAPRSLocation() {
+            fetch(`https://api.aprs.fi/api/get?name=2809129174&what=loc&apikey=${apiKey}&format=json`)
+                .then(response => response.json())
+                .then(data => {
+                    // Proses data yang diterima
+                    console.log(data);
+                    if (data.found > 0) {
+                        const entry = data.entries[0];
+                        const lat = parseFloat(entry.lat);
+                        const lng = parseFloat(entry.lng);
+                        // Tambahkan marker pada peta
+                        L.marker([lat, lng]).addTo(map)
+                            .bindPopup(`<b>Lokasi APRS:</b><br>Latitude: ${lat}<br>Longitude: ${lng}`).openPopup();
+                        // Pusatkan peta pada lokasi baru
+                        map.setView([lat, lng], 10);
+
+                        // Tampilkan informasi tambahan
+                        document.getElementById('username').textContent = entry.name;
+                        document.getElementById('location').textContent = `${lat}, ${lng}`;
+                        document.getElementById('course').textContent = entry.course;
+                        document.getElementById('speed').textContent = entry.speed;
+                    } else {
+                        console.log('Tidak ada data ditemukan.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching APRS data:', error);
+                });
+        }
+
+        // Memuat data saat halaman dimuat
+        loadAPRSLocation();
+    </script>
+</body>
+</html>

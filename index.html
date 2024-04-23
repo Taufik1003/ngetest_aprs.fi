@@ -1,76 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APRS.fi Location Display</title>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <style>
-        /* Set ukuran peta */
-        #map { height: 300px; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APRS.fi Location Display</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <style>
+    /* Set ukuran peta */
+    #map { height: 500px; }
 
-        /* Tampilan responsif */
-        @media screen and (max-width: 600px) {
-            #map { height: 200px; }
-            #info { font-size: 14px; }
-        }
-    </style>
+    /* Tampilan responsif */
+    @media screen and (max-width: 600px) {
+      #map { height: 500px; }
+      #info { font-size: 14px; }
+    }
+  </style>
 </head>
 <body>
-    <h1>APRS.fi Location Display</h1>
-    <div id="info">
-        <p>Nama APRS Pengguna: <span id="username"></span></p>
-        <p>Posisi Terakhir: <span id="location"></span></p>
-        <p>Arah: <span id="course"></span>&deg;</p>
-        <p>Kecepatan: <span id="speed"></span> km/h</p>
-    </div>
-    <!-- Peta -->
-    <div id="map"></div>
+  <h1>APRS.fi Location Display</h1>
+  <div id="info">
+    <p>Nama APRS Pengguna: <span id="username"></span></p>
+    <p>Posisi Terakhir: <span id="location"></span></p>
+    <p>Arah: <span id="course"></span>&deg;</p>
+    <p>Kecepatan: <span id="speed"></span> km/h</p>
+  </div>
+  <!-- Peta -->
+  <div id="map"></div>
 
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script>
-        const apiKey = '195540.BDMkqb8DEdZ7O'; // Ganti dengan API Key Anda
-        const map = L.map('map').setView([0, 0], 2); // Koordinat default
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script>
+    const apiKey = '195540.BDMkqb8DEdZ7O'; // Ganti dengan API Key Anda
+    const map = L.map('map').setView([0, 0], 8); // Koordinat default dan level zoom
 
-        // Tambahkan tile layer OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
+    // Tambahkan tile layer OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
 
-        // Fungsi untuk memuat data lokasi dari API APRS.fi
-        function loadAPRSLocation() {
-            fetch(`https://api.aprs.fi/api/get?name=IWANTA-10&what=loc&apikey=${apiKey}&format=json`)
-                .then(response => response.json())
-                .then(data => {
-                    // Proses data yang diterima
-                    console.log(data);
-                    if (data.found > 0) {
-                        const entry = data.entries[0];
-                        const lat = parseFloat(entry.lat);
-                        const lng = parseFloat(entry.lng);
-                        // Tambahkan marker pada peta
-                        L.marker([lat, lng]).addTo(map)
-                            .bindPopup(`<b>Lokasi APRS:</b><br>Latitude: ${lat}<br>Longitude: ${lng}`).openPopup();
-                        // Pusatkan peta pada lokasi baru
-                        map.setView([lat, lng], 10);
+    // Fungsi untuk memuat data lokasi dari API APRS.fi
+    function loadAPRSLocation() {
+      // Memuat data untuk IWANTA-10
+      fetchAPRSData('IWANTA-10', 'blue');
+      // Memuat data untuk DAMKAR-9
+      fetchAPRSData('DAMKAR-9', 'red');
+    }
 
-                        // Tampilkan informasi tambahan
-                        document.getElementById('username').textContent = entry.name;
-                        document.getElementById('location').textContent = `${lat}, ${lng}`;
-                        document.getElementById('course').textContent = entry.course;
-                        document.getElementById('speed').textContent = entry.speed;
-                    } else {
-                        console.log('Tidak ada data ditemukan.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching APRS data:', error);
-                });
-        }
+    // Fungsi untuk memuat data APRS dan menambahkan marker pada peta
+    function fetchAPRSData(callsign, color) {
+      fetch(`https://api.aprs.fi/api/get?name=${callsign}&what=loc&apikey=${apiKey}&format=json`)
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
+          if (data.found > 0) {
+            const entry = data.entries[0];
+            const lat = parseFloat(entry.lat);
+            const lng = parseFloat(entry.lng);
+            // Tambahkan marker pada peta
+            L.marker([lat, lng], {icon: new L.Icon.Default({className: color})}).addTo(map)
+              .bindPopup(`<b>Lokasi APRS ${callsign}:</b><br>Latitude: ${lat}<br>Longitude: ${lng}`).openPopup();
+            // Pusatkan peta pada lokasi baru
+            map.setView([lat, lng], 10);
 
-        // Memuat data saat halaman dimuat
-        loadAPRSLocation();
-    </script>
+            // Tampilkan informasi tambahan
+            document.getElementById('username').textContent = entry.name;
+            document.getElementById('location').textContent = `${lat}, ${lng}`;
+            document.getElementById('course').textContent = entry.course;
+            document.getElementById('speed').textContent = entry.speed;
+          } else {
+            console.log(`Tidak ada data ditemukan untuk ${callsign}.`);
+          }
+        })
+        .catch(error => {
+          console.error(`Error fetching APRS data for ${callsign}:`, error);
+        });
+    }
+
+    // Memuat data saat halaman dimuat
+    loadAPRSLocation();
+  </script>
 </body>
 </html>

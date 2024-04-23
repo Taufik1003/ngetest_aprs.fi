@@ -40,7 +40,7 @@
 
         // Fungsi untuk memuat data lokasi dari API APRS.fi
         function loadAPRSLocation() {
-            fetch(`https://api.aprs.fi/api/get?name=2809129174&what=loc&apikey=${apiKey}&format=json`)
+            fetch(`https://api.aprs.fi/api/get?name=IWANTA-10&what=loc&apikey=${apiKey}&format=json`)
                 .then(response => response.json())
                 .then(data => {
                     // Proses data yang diterima

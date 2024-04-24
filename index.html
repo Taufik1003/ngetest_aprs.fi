@@ -12,7 +12,7 @@
 
     /* Tampilan responsif */
     @media screen and (max-width: 600px) {
-      #map { height: 500px; }
+      #map { height: 300px; }
       #info { font-size: 14px; }
     }
   </style>
@@ -20,10 +20,13 @@
 <body>
   <h1>APRS.fi Location Display</h1>
   <div id="info">
-    <p>Nama APRS Pengguna: <span id="username"></span></p>
-    <p>Posisi Terakhir: <span id="location"></span></p>
-    <p>Arah: <span id="course"></span>&deg;</p>
-    <p>Kecepatan: <span id="speed"></span> km/h</p>
+    <p>Nama APRS Pengguna: <span id="username1"></span>, <span id="username2"></span></p>
+    <p>Posisi Terakhir IGate: <span id="location1"></span></p>
+    <p>Posisi Terakhir Tracker: <span id="location2"></span></p>
+    <p>Arah IGate: <span id="course1"></span>&deg;</p>
+    <p>Arah Tracker: <span id="course2"></span>&deg;</p>
+    <p>Kecepatan IGate: <span id="speed1"></span> km/h</p>
+    <p>Kecepatan Tracker: <span id="speed2"></span> km/h</p>
   </div>
   <!-- Peta -->
   <div id="map"></div>
@@ -31,7 +34,7 @@
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
     const apiKey = '195540.BDMkqb8DEdZ7O'; // Ganti dengan API Key Anda
-    const map = L.map('map').setView([0, 0], 8); // Koordinat default dan level zoom
+    const map = L.map('map').setView([0, 0], 5); // Koordinat default
 
     // Tambahkan tile layer OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -40,44 +43,65 @@
 
     // Fungsi untuk memuat data lokasi dari API APRS.fi
     function loadAPRSLocation() {
-      // Memuat data untuk IWANTA-10
-      fetchAPRSData('IWANTA-10', 'blue');
-      // Memuat data untuk DAMKAR-9
-      fetchAPRSData('DAMKAR-9', 'red');
-    }
-
-    // Fungsi untuk memuat data APRS dan menambahkan marker pada peta
-    function fetchAPRSData(callsign, color) {
-      fetch(`https://api.aprs.fi/api/get?name=${callsign}&what=loc&apikey=${apiKey}&format=json`)
+      // Memuat data IGate (IWANTA-10)
+      fetch(`https://api.aprs.fi/api/get?name=IWANTA-10&what=loc&apikey=${apiKey}&format=json`)
         .then(response => response.json())
         .then(data => {
-          console.log(data);
           if (data.found > 0) {
             const entry = data.entries[0];
             const lat = parseFloat(entry.lat);
             const lng = parseFloat(entry.lng);
             // Tambahkan marker pada peta
-            L.marker([lat, lng], {icon: new L.Icon.Default({className: color})}).addTo(map)
-              .bindPopup(`<b>Lokasi APRS ${callsign}:</b><br>Latitude: ${lat}<br>Longitude: ${lng}`).openPopup();
-            // Pusatkan peta pada lokasi baru
-            map.setView([lat, lng], 10);
-
+            L.marker([lat, lng]).addTo(map)
+              .bindPopup(`<b>Lokasi IGate:</b><br>Latitude: ${lat}<br>Longitude: ${lng}`).openPopup();
             // Tampilkan informasi tambahan
-            document.getElementById('username').textContent = entry.name;
-            document.getElementById('location').textContent = `${lat}, ${lng}`;
-            document.getElementById('course').textContent = entry.course;
-            document.getElementById('speed').textContent = entry.speed;
+            document.getElementById('username1').textContent = entry.name;
+            document.getElementById('location1').textContent = `${lat}, ${lng}`;
+            document.getElementById('course1').textContent = entry.course;
+            document.getElementById('speed1').textContent = entry.speed;
           } else {
-            console.log(`Tidak ada data ditemukan untuk ${callsign}.`);
+            console.log('Tidak ada data IGate ditemukan.');
           }
         })
         .catch(error => {
-          console.error(`Error fetching APRS data for ${callsign}:`, error);
+          console.error('Error fetching IGate data:', error);
+        });
+
+      // Memuat data Tracker (DAMKAR-9)
+      fetch(`https://api.aprs.fi/api/get?name=DAMKAR-9&what=loc&apikey=${apiKey}&format=json`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.found > 0) {
+            const entry = data.entries[0];
+            const lat = parseFloat(entry.lat);
+            const lng = parseFloat(entry.lng);
+            // Tambahkan marker pada peta
+            L.marker([lat, lng], {icon: trackerIcon}).addTo(map)
+              .bindPopup(`<b>Lokasi Tracker:</b><br>Latitude: ${lat}<br>Longitude: ${lng}`).openPopup();
+            // Tampilkan informasi tambahan
+            document.getElementById('username2').textContent = entry.name;
+            document.getElementById('location2').textContent = `${lat}, ${lng}`;
+            document.getElementById('course2').textContent = entry.course;
+            document.getElementById('speed2').textContent = entry.speed;
+          } else {
+            console.log('Tidak ada data Tracker ditemukan.');
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching Tracker data:', error);
         });
     }
 
     // Memuat data saat halaman dimuat
     loadAPRSLocation();
+
+    // Custom icon for Tracker
+    const trackerIcon = L.icon({
+      iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-green.png',
+      iconSize: [38, 95],
+      iconAnchor: [22, 94],
+      popupAnchor: [-3, -76],
+    });
   </script>
 </body>
 </html>
